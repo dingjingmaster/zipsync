@@ -60,11 +60,12 @@ func manualCopy(dst io.Writer, src io.Reader) error {
 		}
 		if err != nil {
 			if err != io.EOF {
-				fmt.Fprintln(os.Stderr, "write error... 2 %s", err)
-				return err
+				//fmt.Fprintln(os.Stderr, "write error... 2 %s", err)
+				//return err
 			}
 			break
 		}
+		break;
 	}
 	return nil
 }
