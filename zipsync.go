@@ -15,203 +15,203 @@
 package main
 
 import (
-	//"archive/zip"
-	"bytes"
-	"flag"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	zzip "github.com/klauspost/compress/zip"
+    // "archive/zip"
+    "bytes"
+    "flag"
+    "fmt"
+    "io"
+    "io/ioutil"
+    "log"
+    "os"
+    "path/filepath"
+    "strings"
+    zzip "zipsync/compress/zip"
 )
 
 var (
-	outputDir  = flag.String("d", "", "output dir")
-	outputFile = flag.String("l", "", "output list file")
-	zipPrefix  = flag.String("zip-prefix", "", "optional prefix within the zip file to extract, stripping the prefix")
-	filter     multiFlag
+    outputDir  = flag.String("d", "", "output dir")
+    outputFile = flag.String("l", "", "output list file")
+    zipPrefix  = flag.String("zip-prefix", "", "optional prefix within the zip file to extract, stripping the prefix")
+    filter     multiFlag
 )
 
 func init() {
-	flag.Var(&filter, "f", "optional filter pattern")
+    flag.Var(&filter, "f", "optional filter pattern")
 }
 
 func must(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 
 func manualCopy(dst io.Writer, src io.Reader) error {
-	for {
-		nr, _ := io.ReadAll(src)
-		if len(nr) > 0 {
-			nw, ew := dst.Write(nr)
-			if ew != nil {
-				fmt.Fprintln(os.Stderr, "write error...")
-				return ew
-			}
-			if len(nr) != nw {
-				return io.ErrShortWrite
-			}
-		}
-		//if err != nil {
-			//if err != io.EOF {
-				//fmt.Fprintln(os.Stderr, "Warning write error... 2 %s", err)
-				//return err
-			//}
-		//	break
-		//}
-		break;
-	}
-	return nil
+    for {
+        nr, _ := io.ReadAll(src)
+        if len(nr) > 0 {
+            nw, ew := dst.Write(nr)
+            if ew != nil {
+                fmt.Fprintln(os.Stderr, "write error...")
+                return ew
+            }
+            if len(nr) != nw {
+                return io.ErrShortWrite
+            }
+        }
+        // if err != nil {
+        // if err != io.EOF {
+        // fmt.Fprintln(os.Stderr, "Warning write error... 2 %s", err)
+        // return err
+        // }
+        //	break
+        // }
+        break
+    }
+    return nil
 }
 
 func writeFile(filename string, in io.Reader, perm os.FileMode) error {
-	out, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
-	if err != nil {
-		return err
-	}
-	//_, err = io.Copy(out, in)
-	err = manualCopy(out, in)
-	if err != nil {
-		out.Close()
-		return err
-	}
+    out, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+    if err != nil {
+        return err
+    }
+    // _, err = io.Copy(out, in)
+    err = manualCopy(out, in)
+    if err != nil {
+        out.Close()
+        return err
+    }
 
-	return out.Close()
+    return out.Close()
 }
 
 func writeSymlink(filename string, in io.Reader) error {
-	b, err := ioutil.ReadAll(in)
-	if err != nil {
-		return err
-	}
-	dest := string(b)
-	err = os.Symlink(dest, filename)
-	return err
+    b, err := ioutil.ReadAll(in)
+    if err != nil {
+        return err
+    }
+    dest := string(b)
+    err = os.Symlink(dest, filename)
+    return err
 }
 
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: zipsync -d <output dir> [-l <output file>] [-f <pattern>] [zip]...")
-		flag.PrintDefaults()
-	}
+    flag.Usage = func() {
+        fmt.Fprintln(os.Stderr, "usage: zipsync -d <output dir> [-l <output file>] [-f <pattern>] [zip]...")
+        flag.PrintDefaults()
+    }
 
-	flag.Parse()
+    flag.Parse()
 
-	if *outputDir == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
+    if *outputDir == "" {
+        flag.Usage()
+        os.Exit(1)
+    }
 
-	inputs := flag.Args()
+    inputs := flag.Args()
 
-	// For now, just wipe the output directory and replace its contents with the zip files
-	// Eventually this could only modify the directory contents as necessary to bring it up
-	// to date with the zip files.
-	must(os.RemoveAll(*outputDir))
+    // For now, just wipe the output directory and replace its contents with the zip files
+    // Eventually this could only modify the directory contents as necessary to bring it up
+    // to date with the zip files.
+    must(os.RemoveAll(*outputDir))
 
-	must(os.MkdirAll(*outputDir, 0777))
+    must(os.MkdirAll(*outputDir, 0777))
 
-	var files []string
-	seen := make(map[string]string)
+    var files []string
+    seen := make(map[string]string)
 
-	if *zipPrefix != "" {
-		*zipPrefix = filepath.Clean(*zipPrefix) + "/"
-	}
+    if *zipPrefix != "" {
+        *zipPrefix = filepath.Clean(*zipPrefix) + "/"
+    }
 
-	for _, input := range inputs {
-		data, ferr := os.ReadFile(input)
-		if ferr != nil {
-			log.Fatal(ferr)
-		}
-		//reader, err := zip.OpenReader(input)
-		reader, err := zzip.NewReader(bytes.NewReader(data), int64(len(data)))
-		if err != nil {
-			log.Fatal(err)
-		}
-		//defer reader.Close()
+    for _, input := range inputs {
+        data, ferr := os.ReadFile(input)
+        if ferr != nil {
+            log.Fatal(ferr)
+        }
+        // reader, err := zip.OpenReader(input)
+        reader, err := zzip.NewReader(bytes.NewReader(data), int64(len(data)))
+        if err != nil {
+            log.Fatal(err)
+        }
+        // defer reader.Close()
 
-		for _, f := range reader.File {
-			name := f.Name
-			if *zipPrefix != "" {
-				if !strings.HasPrefix(name, *zipPrefix) {
-					continue
-				}
-				name = strings.TrimPrefix(name, *zipPrefix)
-			}
+        for _, f := range reader.File {
+            name := f.Name
+            if *zipPrefix != "" {
+                if !strings.HasPrefix(name, *zipPrefix) {
+                    continue
+                }
+                name = strings.TrimPrefix(name, *zipPrefix)
+            }
 
-			if filter != nil {
-				if match, err := filter.Match(filepath.Base(name)); err != nil {
-					log.Fatal(err)
-				} else if !match {
-					continue
-				}
-			}
+            if filter != nil {
+                if match, err := filter.Match(filepath.Base(name)); err != nil {
+                    log.Fatal(err)
+                } else if !match {
+                    continue
+                }
+            }
 
-			if filepath.IsAbs(name) {
-				log.Fatalf("%q in %q is an absolute path", name, input)
-			}
+            if filepath.IsAbs(name) {
+                log.Fatalf("%q in %q is an absolute path", name, input)
+            }
 
-			if prev, exists := seen[name]; exists {
-				log.Fatalf("%q found in both %q and %q", name, prev, input)
-			}
-			seen[name] = input
+            if prev, exists := seen[name]; exists {
+                log.Fatalf("%q found in both %q and %q", name, prev, input)
+            }
+            seen[name] = input
 
-			filename := filepath.Join(*outputDir, name)
-			if f.FileInfo().IsDir() {
-				must(os.MkdirAll(filename, 0777))
-			} else {
-				must(os.MkdirAll(filepath.Dir(filename), 0777))
-				in, err := f.Open()
-				if err != nil {
-					log.Fatal(err)
-				}
-				if f.FileInfo().Mode()&os.ModeSymlink != 0 {
-					must(writeSymlink(filename, in))
-				} else {
-					must(writeFile(filename, in, f.FileInfo().Mode()))
-				}
-				in.Close()
-				files = append(files, filename)
-			}
-		}
-	}
+            filename := filepath.Join(*outputDir, name)
+            if f.FileInfo().IsDir() {
+                must(os.MkdirAll(filename, 0777))
+            } else {
+                must(os.MkdirAll(filepath.Dir(filename), 0777))
+                in, err := f.Open()
+                if err != nil {
+                    log.Fatal(err)
+                }
+                if f.FileInfo().Mode()&os.ModeSymlink != 0 {
+                    must(writeSymlink(filename, in))
+                } else {
+                    must(writeFile(filename, in, f.FileInfo().Mode()))
+                }
+                in.Close()
+                files = append(files, filename)
+            }
+        }
+    }
 
-	if *outputFile != "" {
-		data := strings.Join(files, "\n")
-		if len(files) > 0 {
-			data += "\n"
-		}
-		must(ioutil.WriteFile(*outputFile, []byte(data), 0666))
-	}
+    if *outputFile != "" {
+        data := strings.Join(files, "\n")
+        if len(files) > 0 {
+            data += "\n"
+        }
+        must(ioutil.WriteFile(*outputFile, []byte(data), 0666))
+    }
 }
 
 type multiFlag []string
 
 func (m *multiFlag) String() string {
-	return strings.Join(*m, " ")
+    return strings.Join(*m, " ")
 }
 
 func (m *multiFlag) Set(s string) error {
-	*m = append(*m, s)
-	return nil
+    *m = append(*m, s)
+    return nil
 }
 
 func (m *multiFlag) Match(s string) (bool, error) {
-	if m == nil {
-		return false, nil
-	}
-	for _, f := range *m {
-		if match, err := filepath.Match(f, s); err != nil {
-			return false, err
-		} else if match {
-			return true, nil
-		}
-	}
-	return false, nil
+    if m == nil {
+        return false, nil
+    }
+    for _, f := range *m {
+        if match, err := filepath.Match(f, s); err != nil {
+            return false, err
+        } else if match {
+            return true, nil
+        }
+    }
+    return false, nil
 }
