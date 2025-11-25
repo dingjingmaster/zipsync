@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/klauspost/compress/zip"
+	"zipsync/compress/zip"
 )
 
 func TestDecodeRegression(t *testing.T) {

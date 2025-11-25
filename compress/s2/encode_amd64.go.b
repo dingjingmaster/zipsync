@@ -1,12 +1,12 @@
-//go:build !appengine && !noasm && gc
-// +build !appengine,!noasm,gc
+// / /go:build !appengine && !noasm && gc
+// // +build !appengine,!noasm,gc
 
 package s2
 
 import (
 	"sync"
 
-	"github.com/klauspost/compress/internal/race"
+	"zipsync/compress/internal/race"
 )
 
 const hasAmd64Asm = true

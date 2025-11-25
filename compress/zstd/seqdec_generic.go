@@ -1,5 +1,5 @@
-//go:build !amd64 || appengine || !gc || noasm
-// +build !amd64 appengine !gc noasm
+// //go:build !amd64 || appengine || !gc || noasm
+// // +build !amd64 appengine !gc noasm
 
 package zstd
 

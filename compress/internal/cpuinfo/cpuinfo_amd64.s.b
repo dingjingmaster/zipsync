@@ -1,6 +1,6 @@
-// +build !appengine
-// +build gc
-// +build !noasm
+// // +build !appengine
+// // +build gc
+// // +build !noasm
 
 #include "textflag.h"
 #include "funcdata.h"
