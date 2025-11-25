@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
-	"go/token"
+	ttoken "go/token"
 	"io"
 	"os"
 	"strconv"
@@ -182,7 +182,7 @@ func unmarshalCorpusFile(b []byte) ([][]byte, error) {
 
 // parseCorpusValue
 func parseCorpusValue(line []byte) ([]byte, error) {
-	fs := token.NewFileSet()
+	fs := ttoken.NewFileSet()
 	expr, err := parser.ParseExprFrom(fs, "(test)", line, 0)
 	if err != nil {
 		return nil, err
@@ -205,7 +205,7 @@ func parseCorpusValue(line []byte) ([]byte, error) {
 			return nil, fmt.Errorf("expected []byte")
 		}
 		lit, ok := arg.(*ast.BasicLit)
-		if !ok || lit.Kind != token.STRING {
+		if !ok || lit.Kind != ttoken.STRING {
 			return nil, fmt.Errorf("string literal required for type []byte")
 		}
 		s, err := strconv.Unquote(lit.Value)

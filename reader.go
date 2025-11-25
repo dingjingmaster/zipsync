@@ -29,7 +29,7 @@ var (
 )
 
 // A Reader serves content from a ZIP archive.
-type Reader struct {
+type InflateReader struct {
 	r             io.ReaderAt
 	File          []*File
 	Comment       string
@@ -48,7 +48,7 @@ type Reader struct {
 // A ReadCloser is a [Reader] that must be closed when no longer needed.
 type ReadCloser struct {
 	f *os.File
-	Reader
+	InflateReader
 }
 
 // A File is a single file in a ZIP archive.
@@ -56,7 +56,7 @@ type ReadCloser struct {
 // The file content can be accessed by calling [File.Open].
 type File struct {
 	FileHeader
-	zip          *Reader
+	zip          *InflateReader
 	zipr         io.ReaderAt
 	headerOffset int64 // includes overall ZIP archive baseOffset
 	zip64        bool  // zip64 extended information extra field presence
@@ -100,11 +100,11 @@ func OpenReader(name string) (*ReadCloser, error) {
 // A future version of Go may introduce this behavior by default.
 // Programs that want to accept non-local names can ignore
 // the [ErrInsecurePath] error and use the returned reader.
-func NewReader(r io.ReaderAt, size int64) (*Reader, error) {
+func NewInflateReader(r io.ReaderAt, size int64) (*InflateReader, error) {
 	if size < 0 {
 		return nil, errors.New("zip: size cannot be negative")
 	}
-	zr := new(Reader)
+	zr := new(InflateReader)
 	var err error
 	if err = zr.init(r, size); err != nil && err != ErrInsecurePath {
 		return nil, err
@@ -112,7 +112,7 @@ func NewReader(r io.ReaderAt, size int64) (*Reader, error) {
 	return zr, err
 }
 
-func (r *Reader) init(rdr io.ReaderAt, size int64) error {
+func (r *InflateReader) init(rdr io.ReaderAt, size int64) error {
 	end, baseOffset, err := readDirectoryEnd(rdr, size)
 	if err != nil {
 		return err
@@ -178,14 +178,14 @@ func (r *Reader) init(rdr io.ReaderAt, size int64) error {
 // RegisterDecompressor registers or overrides a custom decompressor for a
 // specific method ID. If a decompressor for a given method is not found,
 // [Reader] will default to looking up the decompressor at the package level.
-func (r *Reader) RegisterDecompressor(method uint16, dcomp Decompressor) {
+func (r *InflateReader) RegisterDecompressor(method uint16, dcomp Decompressor) {
 	if r.decompressors == nil {
 		r.decompressors = make(map[uint16]Decompressor)
 	}
 	r.decompressors[method] = dcomp
 }
 
-func (r *Reader) decompressor(method uint16) Decompressor {
+func (r *InflateReader) decompressor(method uint16) Decompressor {
 	dcomp := r.decompressors[method]
 	if dcomp == nil {
 		dcomp = _decompressor(method)
@@ -872,7 +872,7 @@ func toValidName(name string) string {
 	return p
 }
 
-func (r *Reader) initFileList() {
+func (r *InflateReader) initFileList() {
 	r.fileListOnce.Do(func() {
 		// files and knownDirs map from a file/directory name
 		// to an index into the r.fileList entry that we are
@@ -946,7 +946,7 @@ func fileEntryLess(x, y string) bool {
 // using the semantics of fs.FS.Open:
 // paths are always slash separated, with no
 // leading / or ../ elements.
-func (r *Reader) Open(name string) (fs.File, error) {
+func (r *InflateReader) Open(name string) (fs.File, error) {
 	r.initFileList()
 
 	if !fs.ValidPath(name) {
@@ -983,7 +983,7 @@ func split(name string) (dir, elem string, isDir bool) {
 
 var dotFile = &fileListEntry{name: "./", isDir: true}
 
-func (r *Reader) openLookup(name string) *fileListEntry {
+func (r *InflateReader) openLookup(name string) *fileListEntry {
 	if name == "." {
 		return dotFile
 	}
@@ -1003,7 +1003,7 @@ func (r *Reader) openLookup(name string) *fileListEntry {
 	return nil
 }
 
-func (r *Reader) openReadDir(dir string) []fileListEntry {
+func (r *InflateReader) openReadDir(dir string) []fileListEntry {
 	files := r.fileList
 	i := sort.Search(len(files), func(i int) bool {
 		idir, _, _ := split(files[i].name)
