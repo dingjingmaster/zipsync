@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package fuzz provides a way to add test cases to a testing.F instance from a zip file.
-package fuzz
+package main
 
 import (
 	"archive/zip"

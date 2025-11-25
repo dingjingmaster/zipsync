@@ -3,7 +3,7 @@
 // This is a very limited module meant for use internally
 // in this project. For more versatile solution check
 // https://github.com/klauspost/cpuid.
-package cpuinfo
+package main
 
 // HasBMI1 checks whether an x86 CPU supports the BMI1 extension.
 func HasBMI1() bool {

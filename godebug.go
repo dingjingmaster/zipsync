@@ -5,7 +5,7 @@
 // Package godebug makes the simplified settings in the $GODEBUG environment variable
 // available to packages.
 // Needed since internal/godebug is not available here.
-package godebug
+package main
 
 import "os"
 

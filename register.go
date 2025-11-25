@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zip
+package main
 
 import (
+    "compress/flate"
     "errors"
     "io"
     "sync"
-
-    "zipsync/compress/flate"
+    // "zipsync/compress/flate"
 )
 
 // A Compressor returns a new compressing writer, writing to w.
@@ -103,22 +103,22 @@ func (r *pooledFlateReader) Close() error {
 }
 
 var (
-    compressors   sync.Map // map[uint16]Compressor
-    decompressors sync.Map // map[uint16]Decompressor
+    myCompressors   sync.Map // map[uint16]Compressor
+    myDecompressors sync.Map // map[uint16]Decompressor
 )
 
 func init() {
-    compressors.Store(Store, Compressor(func(w io.Writer) (io.WriteCloser, error) { return &nopCloser{w}, nil }))
-    compressors.Store(Deflate, Compressor(func(w io.Writer) (io.WriteCloser, error) { return newFlateWriter(w), nil }))
+    myCompressors.Store(Store, Compressor(func(w io.Writer) (io.WriteCloser, error) { return &nopCloser{w}, nil }))
+    myCompressors.Store(Deflate, Compressor(func(w io.Writer) (io.WriteCloser, error) { return newFlateWriter(w), nil }))
 
-    decompressors.Store(Store, Decompressor(io.NopCloser))
-    decompressors.Store(Deflate, Decompressor(newFlateReader))
+    myDecompressors.Store(Store, Decompressor(io.NopCloser))
+    myDecompressors.Store(Deflate, Decompressor(newFlateReader))
 }
 
 // RegisterDecompressor allows custom decompressors for a specified method ID.
 // The common methods [Store] and [Deflate] are built in.
 func RegisterDecompressor(method uint16, dcomp Decompressor) {
-    if _, dup := decompressors.LoadOrStore(method, dcomp); dup {
+    if _, dup := myDecompressors.LoadOrStore(method, dcomp); dup {
         panic("decompressor already registered")
     }
 }
@@ -126,21 +126,21 @@ func RegisterDecompressor(method uint16, dcomp Decompressor) {
 // RegisterCompressor registers custom compressors for a specified method ID.
 // The common methods [Store] and [Deflate] are built in.
 func RegisterCompressor(method uint16, comp Compressor) {
-    if _, dup := compressors.LoadOrStore(method, comp); dup {
+    if _, dup := myCompressors.LoadOrStore(method, comp); dup {
         panic("compressor already registered")
     }
 }
 
-func compressor(method uint16) Compressor {
-    ci, ok := compressors.Load(method)
+func _compressor(method uint16) Compressor {
+    ci, ok := myCompressors.Load(method)
     if !ok {
         return nil
     }
     return ci.(Compressor)
 }
 
-func decompressor(method uint16) Decompressor {
-    di, ok := decompressors.Load(method)
+func _decompressor(method uint16) Decompressor {
+    di, ok := myDecompressors.Load(method)
     if !ok {
         return nil
     }

@@ -19,7 +19,7 @@ fields must be used instead.
 
 [ZIP specification]: https://support.pkware.com/pkzip/appnote
 */
-package zip
+package main
 
 import (
 	"io/fs"

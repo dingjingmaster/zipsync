@@ -1,6 +1,6 @@
 //go:build !(amd64 || arm64 || ppc64le || riscv64) || nounsafe || purego || appengine
 
-package le
+package main
 
 import (
 	"encoding/binary"
