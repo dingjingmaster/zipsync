@@ -47,7 +47,7 @@ func must(err error) {
 
 func manualCopy(dst io.Writer, src io.Reader) error {
 	for {
-		nr, err := io.ReadAll(src)
+		nr, _ := io.ReadAll(src)
 		if len(nr) > 0 {
 			nw, ew := dst.Write(nr)
 			if ew != nil {
@@ -58,13 +58,13 @@ func manualCopy(dst io.Writer, src io.Reader) error {
 				return io.ErrShortWrite
 			}
 		}
-		if err != nil {
-			if err != io.EOF {
-				//fmt.Fprintln(os.Stderr, "write error... 2 %s", err)
+		//if err != nil {
+			//if err != io.EOF {
+				//fmt.Fprintln(os.Stderr, "Warning write error... 2 %s", err)
 				//return err
-			}
-			break
-		}
+			//}
+		//	break
+		//}
 		break;
 	}
 	return nil
